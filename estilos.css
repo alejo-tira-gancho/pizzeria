@@ -1,0 +1,64 @@
+/* Estilos Generales */
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: 0;
+	font-family: 'Lato', sans-serif;
+}
+
+body {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	text-align: center;
+	background: url(imagenes/pizzas.jpg) no-repeat center center/ cover ;
+}
+
+#contenedor {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	min-height: 80vh;
+	width: 80vh;
+	max-width: 600px;
+	background-color: white;
+	border: 4px solid black;
+}
+h1 {
+  font-size: 3rem;
+  width: 100%;
+  margin: 20px 10px;
+}
+
+ul {
+  width: 100%;
+  height: 100%;
+}
+
+.toppings {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 80px;
+  margin: 15px 0;
+}
+
+.topping-fondo-marron {
+	background-color: #aa5822;
+}
+
+.topping-fondo-naranja {
+	background-color: #ff7b0f;
+
+}
+
+.texto-verde {
+  color: green;
+}
