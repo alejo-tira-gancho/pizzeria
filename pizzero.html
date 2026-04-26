@@ -2,196 +2,230 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel del Pizzero 👨‍🍳</title>
+    <title>Panel Cocina 🍕</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: white; padding: 20px; }
-        h1 { text-align: center; color: #ecf0f1; border-bottom: 2px solid #e67e22; padding-bottom: 10px; }
-        .grid-pedidos { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 20px; margin-top: 20px;
+        body { font-family: sans-serif; background: #2c3e50; color: white; margin: 0; padding: 20px; }
+        /* Agrega esto a tu <style> */
+/* Esto es lo que evita que los pedidos "se asomen" antes de tiempo */
+/* Borra las líneas 11 a 15 y deja solo esto para los pedidos */
+h1, #contenedor { display: none; }
+
+.overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.9); z-index: 9999; 
+    display: none; /* <--- Cambia FLEX por NONE aquí por defecto */
+    align-items: center; justify-content: center;
+}
+        .login-card {
+            background: #34495e; padding: 40px; border-radius: 10px; 
+            border: 2px solid #ff9800; text-align: center; width: 300px;
         }
-        .ticket {
-            background: #fff; color: #333; padding: 15px; border-radius: 8px;
-            border-left: 10px solid #e67e22; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            position: relative; animation: aparecer 0.5s ease;
-        }
-        @keyframes aparecer { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hora { font-size: 0.8rem; color: #7f8c8d; display: block; margin-bottom: 10px; }
-        .contenido { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
-        .total { display: block; margin-top: 15px; font-size: 1.2rem; color: #27ae60; text-align: right; font-weight: bold; }
-        button:hover {
-            background: #d35400 !important;
-        }        
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+        button { width: 100%; padding: 10px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .ticket { background: white; color: #333; padding: 15px; border-radius: 8px; border-left: 8px solid #ff9800; }
     </style>
 </head>
 <body>
-<div id="capaInicio" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-    <h2 style="color: white;">👨‍🍳 ¡Hola, Pizzero!</h2>
-    <p style="color: white;">Haz clic abajo para activar las alertas de pedidos.</p>
-    <button onclick="iniciarTurno()" style="background: #e67e22; color: white; padding: 15px 30px; font-size: 20px; border: none; border-radius: 5px; cursor: pointer;">
-        🔔 Iniciar Turno
-    </button>
-</div>
-    <h1>👨‍🍳 Cocina Activa</h1>
-    <div id="listaPedidos" class="grid-pedidos">Cargando pedidos desde la nube...</div>
 
-    <script>
-        const SUPABASE_URL = 'https://hjwfmexfahcqsiqnsxpd.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_mH6jx0dJyPpbxIGyvWlP4g_5o8NlOmJ';
-        const clienteSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        async function cargarPedidos() {
-            console.log("Consultando pedidos...");
-            const { data, error } = await clienteSupabase
-                .from('pedidos')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error("Error de conexión:", error);
-                document.getElementById('listaPedidos').innerHTML = "Error al cargar pedidos.";
-                return;
-            }
-
-            console.log("Pedidos recibidos:", data);
-            renderizarTickets(data);
-        }
-
-        function renderizarTickets(pedidos) {
-            const contenedor = document.getElementById('listaPedidos');
-            if (!pedidos || pedidos.length === 0) {
-                contenedor.innerHTML = "<h3>No hay pedidos pendientes 🍕</h3>";
-                cambiarColor = document.body.style.backgroundColor = "green";
-                return;
-            }
-
-            contenedor.innerHTML = "";
-            document.body.style.backgroundColor = "#2c3e50";
-            pedidos.forEach(p => {
-                const fecha = p.created_at ? new Date(p.created_at).toLocaleTimeString() : "Sin hora";
-                const totalFormateado = p.total ? Number(p.total).toFixed(2) : "0.00";
-
-                const div = document.createElement('div');
-                div.className = 'ticket';
-                div.innerHTML = `
-    <span class="hora">🕒 Recibido: ${fecha}</span>
-    <div style="background: #fff5e6; padding: 10px; border-radius: 4px; border-left: 3px solid #e67e22; margin-bottom: 10px;">
-        <div style="font-size: 1.2rem; color: #d35400; font-weight: bold;">👤 ${p.nombre || "Anónimo"}</div>
-        <div style="font-size: 1rem; color: #2c3e50;">📞 Tel: ${p.telefono || "Sin teléfono"}</div>
+    <div id="seccion-login" class="overlay">
+        <div class="login-card">
+            <h2>🍕 Acceso Cocina</h2>
+            <input type="email" id="email" placeholder="Correo">
+            <input type="password" id="pass" placeholder="Contraseña">
+            <!-- <button onclick="login()">ENTRAR</button> -->
+            <button id="btn-login">ENTRAR</button>            
+        </div>
     </div>
-    <div class="contenido">${p.contenido || "Pedido vacío"}</div>
-    <span class="total">Total: $${totalFormateado}</span>
-    <button onclick="despacharPedido(${p.id}, '${p.telefono}', '${p.nombre}', '${p.contenido}')"
-    style="width: 100%; margin-top: 10px; background: #e67e22; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        ✅ DESPACHAR
-    </button>
-`;
-                contenedor.appendChild(div);
-            });
+<!-- <button id="btn-cerrar" style="background:red; color:white;">CERRAR SESIÓN</button> -->
+    <h1>👨‍🍳 Pedidos Pendientes</h1>
+    <div id="contenedor" class="grid">Cargando...</div>
+
+    <script type="module">
+// 1. CONFIGURACIÓN (Asegúrate de que no haya espacios al principio o final)
+const SUPABASE_URL = 'https://hjwfmexfahcqsiqnsxpd.supabase.co'; 
+const SUPABASE_KEY = 'sb_publishable_mH6jx0dJyPpbxIGyvWlP4g_5o8NlOmJ';
+
+// 2. INICIALIZACIÓN (Esto DEBE ir antes que cualquier función)
+//const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// async function cerrarSesion() {
+//     const { error } = await supabaseClient.auth.signOut();
+//     if (error) {
+//         alert("Error al salir");
+//     } else {
+//         // Esto recarga la página y, como ya no hay sesión, 
+//         // ¡el login aparecerá y se quedará fijo!
+//         location.reload(); 
+//     }
+// }
+
+// Conectamos el botón
+//document.getElementById('btn-cerrar').addEventListener('click', cerrarSesion);
+// 3. FUNCIÓN DE LOGIN
+async function validarUsuario(e) {
+    if (e) e.preventDefault(); 
+      alert("¡Botón presionado!"); // <--- Si esto no sale, el botón no está conectado    
+    const emailInput = document.getElementById('email').value.trim();
+    const passInput = document.getElementById('pass').value.trim();
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: emailInput,
+        password: passInput
+    });
+
+    if (error) {
+        alert("Error de acceso: " + error.message);
+    } else {
+        // 1. Escondemos la cortina de login
+        document.getElementById('seccion-login').style.display = 'none';
+        
+        // 2. Encendemos los pedidos (h1 y grid)
+        document.querySelector('h1').style.display = 'block';
+        document.getElementById('contenedor').style.display = 'grid';
+        
+        cargarDatos();
+    }
+}
+async function cargarDatos() {
+    const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+            *,
+            pedido_detalles (
+                cantidad,
+                toppings ( nombre )
+            )
+        `)
+        .eq('estado', 'pendiente')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error en base de datos:", error);
+        return;
+    }
+
+    const contenedor = document.getElementById('contenedor');
+    contenedor.innerHTML = "";
+
+    if (!data || data.length === 0) {
+        contenedor.innerHTML = "<h3 style='text-align:center;'>No hay pedidos pendientes 🍕</h3>";
+        return;
+    }
+
+    data.forEach(pedidos => {
+        // --- 1. PROCESAMOS LOS INGREDIENTES DESDE LA RELACIÓN ---
+        const listaIngredientes = pedidos.pedido_detalles
+            .map(det => det.toppings.nombre)
+            .join(', ');
+
+        // --- 2. PROCESAMOS LA DIRECCIÓN/GPS ---
+        const urlMapaReal = pedidos.direccion.includes('http') 
+            ? pedidos.direccion 
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedidos.direccion)}`;
+
+        // --- 3. PROCESAMOS EL WHATSAPP ---
+        let telefonoLimpio = pedidos.telefono.replace(/\D/g, ''); 
+        if (!telefonoLimpio.startsWith('58')) {
+            telefonoLimpio = '58' + telefonoLimpio;
         }
 
-        const canal = clienteSupabase
-            .channel('canal-diagnostico')
-            .on(
-                'postgres_changes', 
-                { event: '*', schema: 'public', table: 'pedidos' }, 
-                (payload) => {
-                    // Esto tiene que salir SI O SI si la señal llega
-                    console.log("Datos:", payload);
-                    cargarPedidos();
-                    reproducirSonido();
-                }
-            )
-            .subscribe((status) => {
-                console.log("📡 Estado de la antena:", status);
-            });
+        const mensaje = encodeURIComponent(`¡Hola ${pedidos.nombre}! Soy el motorizado de la pizzería. Voy en camino con tu pedido a la direccion: ${pedidos.direccion}`);
+        const urlWhatsApp = `https://wa.me/${telefonoLimpio}?text=${mensaje}`;
 
-                // Función de sonido mejorada para la prueba
-function reproducirSonido() {
-    console.log("🔔 ¡Bip fuerte activado!");
+        // --- 4. ARMAMOS EL TICKET ---
+        contenedor.innerHTML += `
+            <div class="ticket">
+                <h3>👤 ${pedidos.nombre}</h3>
+                
+                <p>🍕 <strong>Pedido:</strong> ${listaIngredientes}</p>                
+                <p>📍 <strong>Ubicación:</strong> ${pedidos.direccion}</p>
+                <p>📞 <strong>Teléfono:</strong> ${pedidos.telefono}</p>
+                
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <a href="${urlMapaReal}" target="_blank" style="flex: 1; text-align: center; background: #4285F4; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                        🎯 Ver Ubicación Real
+                    </a>
+                    
+                    <a href="${urlWhatsApp}" target="_blank" style="flex: 1; text-align: center; background: #25D366; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                        🟢 WhatsApp
+                    </a>
+                </div>
 
-    // 1. Alerta visual (para asegurar que el código corre)
-    const aviso = document.createElement('div');
-    aviso.innerHTML = "🍕 ¡PEDIDO NUEVO!";
-    aviso.style = "position:fixed; top:20px; right:20px; background:#ff5722; color:white; padding:25px; border-radius:12px; z-index:9999; font-weight:bold; font-size:24px; box-shadow: 0 0 20px rgba(0,0,0,0.5);";
-    document.body.appendChild(aviso);
-    setTimeout(() => aviso.remove(), 4000);
+                <button class="btn-despachar" onclick="despacharPedido('${pedidos.id}')" style="margin-top: 10px; background: #ff9800;">
+                    DESPACHAR
+                </button>
+            </div>
+        `;
+    });
+}
 
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
+// --- COPIA DESDE AQUÍ ---
+
+async function despacharPedido(idRecibido) {
+    console.log("Despachando el pedido con ID:", idRecibido);
+
+    const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ estado: 'despachado' }) // Cambiamos el estado en la base de datos
+        .eq('id', idRecibido);            // Filtramos para que solo afecte a ese pedido
+
+    if (error) {
+        console.error("Error al actualizar Supabase:", error);
+        alert("Hubo un error al despachar: " + error.message);
+    } else {
+        console.log("¡Pedido actualizado con éxito!");
         
-        // Creamos dos osciladores para un sonido más potente (tipo campana)
-        const osc1 = audioCtx.createOscillator();
-        const osc2 = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        // Configuración de tonos
-        osc1.frequency.setValueAtTime(880, audioCtx.currentTime); // Tono alto
-        osc2.frequency.setValueAtTime(440, audioCtx.currentTime); // Tono bajo para dar cuerpo
-
-        // --- EL VOLUMEN ---
-        // Subimos a 0.8 (Cuidado: 1.0 es el máximo y puede distorsionar)
-        gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); 
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-
-        audioCtx.resume().then(() => {
-            osc1.start();
-            osc2.start();
-            osc1.stop(audioCtx.currentTime + 0.8);
-            osc2.stop(audioCtx.currentTime + 0.8);
-        });
-    } catch (e) {
-        console.error("Error de audio:", e);
+        // Esta línea es la clave: vuelve a llamar a tu función 
+        // para que la lista se limpie y la tarjeta desaparezca.
+        cargarDatos(); 
     }
 }
 
-        function iniciarTurno() {
-            // Reproduce un sonido corto para activar el permiso
-            reproducirSonido();
-            
-            // Esconde la capa oscura
-            document.getElementById('capaInicio').style.display = 'none';
-            
-            console.log("Turno iniciado y sonido activado.");
-        }
-        // Ejecución inicial
-        cargarPedidos();
-       //despacha el pedido
-            async function despacharPedido(id, telefono, nombre, pizza) {
-                if (!confirm(`¿Despachar pedido de ${nombre}?`)) return;
-            // Usamos .trim() aquí también para asegurar
-                const nombreLimpio = nombre.trim(); 
-                const pizzaLimpia = pizza.trim();
-                // 1. Creamos el texto base
-                let mensaje = `Hola ${nombre}, tu pizza de (${pizza}) ya esta lista y va en camino. Buen provecho`;
+// --- HASTA AQUÍ ---
+// 5. FUNCIÓN DESPACHAR
+// async function despachar(id) {
+//     const { error } = await supabaseClient
+//         .from('pedidos')
+//         .update({ estado: 'en camino' })
+//         .eq('id', id);
 
-                // 2. LIMPIEZA EXTREMA: Quitamos cualquier caracter que no sea letra, numero o espacio
-                // Esto borra el emoji oculto que esta causando el rombo
-                mensaje = mensaje.replace(/[^\x20-\x7E]/g, ''); 
+//     if (error) alert("Error al despachar");
+//     else cargarDatos();
+// }
 
-                // 3. Añadimos el punto final manualmente después de la limpieza
-                mensaje += ".";
+// 6. REVISAR SESIÓN AL CARGAR
+async function revisarSesion() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (session) {
+        // Si ya estabas adentro, quitamos el login y mostramos todo
+        document.getElementById('seccion-login').style.display = 'none';
+        document.querySelector('h1').style.display = 'block';
+        document.getElementById('contenedor').style.display = 'grid';
+        cargarDatos();
+    } else {
+        // Si no hay nadie, forzamos que se vea el login
+        document.getElementById('seccion-login').style.display = 'flex';
+    }
+}
 
-                // 4. Codificamos para URL
-                const mensajeURL = encodeURIComponent(mensaje);
+// 1. Primero configuramos el botón
+// 1. Configuramos el botón primero
+const boton = document.getElementById('btn-login');
+if (boton) {
+    boton.onclick = validarUsuario; // Usamos el nombre que le pusimos
+    console.log("Conexión con el botón establecida ✅");
+}
 
-                if (telefono && telefono !== 'undefined' && telefono.trim() !== "") {
-                    // Quitamos espacios o guiones del teléfono por si acaso
-                    const telLimpio = telefono.replace(/\D/g, ''); 
-                    window.open(`https://wa.me/58${telLimpio}?text=${mensajeURL}`, '_blank');
-                }
+// 2. Ejecutamos la revisión de sesión
+revisarSesion();
 
-                // 5. Borrado de Supabase
-                const { error } = await clienteSupabase.from('pedidos').delete().eq('id', id);
-                if (error) alert("Error: " + error.message);
-            }   
+// 3. Exportamos para que los botones de las tarjetas funcionen
+window.despacharPedido = despacharPedido;
     </script>
 </body>
 </html>

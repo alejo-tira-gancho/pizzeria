@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Pizzería Pro - Supabase Cloud</title>
+    <title>Pizzería Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; display: flex; gap: 20px; }
@@ -24,21 +25,20 @@
         .card span { font-size: 2.5rem; display: block; margin-bottom: 5px; }
 
         .item-pedido { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .btn-ordenar { 
-            width: 100%; background: #4caf50; color: white; border: none; 
-            padding: 15px; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 20px;
-        }
-        /* Estilo para el campo de nombre */
-        .input-nombre {
-            width: 100%; padding: 10px; margin-top: 15px; border: 1px solid #ccc; 
-            border-radius: 5px; box-sizing: border-box;
+        .btn-ordenar { padding: 20px; font-size: 1.2rem; cursor: pointer; width: 100%; background: #ff9800; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        .input-nombre { width: 100%; padding: 10px; margin-top: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+
+        @media (max-width: 600px) {
+            body { flex-direction: column !important; padding: 10px; overflow-x: hidden; width: 100vw; }
+            .panel { width: 100% !important; max-width: 100%; margin-bottom: 20px; box-sizing: border-box; }
+            .pedido { border-left: none; border-top: 5px solid #ff9800; min-width: unset; }
         }
     </style>
 </head>
 <body>
 
     <div class="panel menu">
-        <h2>🍕 Haz tu Pedido de Pizzas (Desde la Nube)</h2>
+        <h2>🍕 Haz tu Pedido de Pizzas (Desde tu Hogar!!!)</h2>
         <div id="contenedorMenu" class="grid-toppings">Cargando ingredientes...</div>
     </div>
 
@@ -48,29 +48,37 @@
         <hr>
         
         <input type="text" id="nombreCliente" class="input-nombre" placeholder="¿A nombre de quién?">
-        <input type="text" id="telefonoCliente" class="input-nombre" placeholder="Tu teléfono de contacto...">        
+        <input type="text" id="telefonoCliente" class="input-nombre" placeholder="Teléfono (0412, 0424, 0414...)">
+        <input type="text" id="direccion" class="input-nombre" placeholder="Dirección exacta..." required>
+
+        <button type="button" onclick="obtenerGPS()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 5px; margin-top: 10px; cursor: pointer; width: 100%; font-weight: bold;">
+            📍 O usa mi ubicación exacta (GPS)
+        </button>
+
         <h3>Total: $<span id="totalTxt">0.00</span></h3>
+        <div id="seccion-pago" style="text-align: center; border: 1px solid #ccc; padding: 15px; border-radius: 10px; margin-top: 20px;">
+            <h3>💸 Pago Móvil</h3>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PAGO-MOVIL:0102:04126327294:V6544393" alt="QR Pago Móvil">
+            <div style="background: #f9f9f9; padding: 10px; margin: 10px 0; font-size: 0.9em;">
+                <strong>Banco:</strong> BDV (0102)<br>
+                <strong>Teléfono:</strong> 0412-6327294<br>
+                <strong>Cédula:</strong> V-6.544.393
+            </div>
+            <input type="number" id="referencia" placeholder="Últimos 6 dígitos de referencia" required style="width: 80%; padding: 10px; margin-bottom: 10px;">
+        </div>
         <button class="btn-ordenar" onclick="confirmarPedido()">Enviar Pedido a Cocina</button>
     </div>
 
     <script>
     const SUPABASE_URL = 'https://hjwfmexfahcqsiqnsxpd.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_mH6jx0dJyPpbxIGyvWlP4g_5o8NlOmJ';
-    const clienteSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
     let pedido = [];
 
     async function obtenerIngredientes() {
-        const { data, error } = await clienteSupabase
-            .from('toppings')
-            .select('*')
-            .order('nombre', { ascending: true });
-
-        if (error) {
-            document.getElementById('contenedorMenu').innerHTML = "Error al conectar con la base de datos.";
-            return;
-        }
-        dibujarMenu(data);
+        const { data, error } = await supabaseClient.from('toppings').select('*');
+        if (error) return console.error("Error:", error);
+        if (data) dibujarMenu(data);
     }
 
     function dibujarMenu(ingredientes) {
@@ -79,11 +87,7 @@
         ingredientes.forEach(ing => {
             const div = document.createElement('div');
             div.className = 'card';
-            div.innerHTML = `
-                <span>${ing.icono || '🍕'}</span>
-                <strong>${ing.nombre}</strong><br>
-                $${Number(ing.precio).toFixed(2)}
-            `;
+            div.innerHTML = `<span>${ing.icono || '🍕'}</span><strong>${ing.nombre}</strong><br>$${Number(ing.precio).toFixed(2)}`;
             div.onclick = () => agregarAlPedido(ing);
             contenedor.appendChild(div);
         });
@@ -115,41 +119,84 @@
         actualizarInterfaz();
     }
 
-    // --- FUNCIÓN ACTUALIZADA PARA ENVIAR EL NOMBRE ---
+    // --- AQUÍ ESTÁ LA FUNCIÓN EVOLUCIONADA QUE INTEGRA LA TABLA INTERMEDIA ---
     async function confirmarPedido() {
-        const nombreInput = document.getElementById('nombreCliente');
-        const telefonoInput = document.getElementById('telefonoCliente');
-        const nombre = nombreInput.value.trim();
-        const telefono = telefonoInput.value.trim(); // Guardamos el valor        
+        const nombre = document.getElementById('nombreCliente').value.trim();
+        const telefono = document.getElementById('telefonoCliente').value.trim(); 
+        const direccion = document.getElementById('direccion').value.trim();
+        const referencia = String(document.getElementById('referencia').value).trim();
 
-        // Validaciones
-    if (!nombre || !telefono) return alert("Por favor, pon tu nombre y teléfono.");
-    if (pedido.length === 0) return alert("Selecciona al menos un ingrediente.");
+        if (!nombre || !telefono || !direccion || !referencia) return alert("Llena todos los campos.");
+        if (referencia.length !== 6) return alert("Referencia de 6 dígitos requerida.");
+        if (pedido.length === 0) return alert("Selecciona al menos un ingrediente.");
 
-    const listaNombres = pedido.map(ing => ing.nombre).join(", ");
-    const precioTotal = pedido.reduce((sum, ing) => sum + Number(ing.precio), 0);
+        const precioTotal = pedido.reduce((sum, ing) => sum + Number(ing.precio), 0);
 
-    try {
-        const { error } = await clienteSupabase
-            .from('pedidos')
-            .insert([{ 
-                nombre: nombre, 
-                telefono: telefono, // <--- Enviamos el teléfono a Supabase
-                contenido: listaNombres, 
-                total: precioTotal 
-            }]);
+        try {
+            // PASO 1: Insertar en la tabla 'pedidos' y obtener el ID generado
+            const { data: nuevoPedido, error: errorPedido } = await supabaseClient
+                .from('pedidos')
+                .insert([{ 
+                    nombre: nombre, 
+                    telefono: telefono, 
+                    total: parseFloat(precioTotal), 
+                    direccion: direccion,
+                    referencia: referencia,
+                    metodo_pago: 'Pago Movil',
+                    estado: 'pendiente'
+                }])
+                .select(); // El .select() es obligatorio para obtener el ID
 
-        if (error) throw error;
+            if (errorPedido) throw errorPedido;
 
-        alert("¡Pedido enviado!");
-        pedido = [];
-        nombreInput.value = ""; 
-        telefonoInput.value = ""; // Limpiamos el campo
-        actualizarInterfaz();
-    } catch (error) {
-        alert("Error al enviar. ¿Creaste la columna 'telefono' en Supabase?");
+            const pedidoId = nuevoPedido[0].id; // El ID que acaba de crear Supabase
+
+            // PASO 2: Preparar los detalles usando la lista 'pedido' que ya tiene precios variables
+            const detalles = pedido.map(ing => ({
+                pedido_id: pedidoId,
+                topping_id: ing.id,       // Usamos el ID real de la tabla toppings
+                cantidad: 1,
+                precio_unitario: parseFloat(ing.precio) // Guardamos el precio dinámico de la base de datos
+            }));
+
+            // PASO 3: Insertar todos los detalles en la tabla puente
+            const { error: errorDetalle } = await supabaseClient
+                .from('pedido_detalles')
+                .insert(detalles);
+
+            if (errorDetalle) throw errorDetalle;
+
+            alert("¡Pedido enviado con éxito! 🍕 Pagado y listo para cocina.");
+            
+            // Limpieza
+            pedido = [];
+            document.getElementById('nombreCliente').value = ""; 
+            document.getElementById('telefonoCliente').value = "";
+            document.getElementById('direccion').value = "";
+            document.getElementById('referencia').value = "";
+            actualizarInterfaz();
+
+        } catch (error) {
+            console.error(error);
+            alert("Error al enviar: " + error.message);
+        }
     }
-}
+
+    function obtenerGPS() {
+        if (navigator.geolocation) {
+            const direccionInput = document.getElementById('direccion');
+            direccionInput.value = "Buscando satélites... 🛰️";
+            navigator.geolocation.getCurrentPosition(function(posicion) {
+                const lat = posicion.coords.latitude;
+                const lon = posicion.coords.longitude;
+                direccionInput.value = `https://www.google.com/maps?q=${lat},${lon}`;
+                alert("🎯 Ubicación capturada.");
+            }, function() {
+                direccionInput.value = "";
+                alert("Error al obtener GPS.");
+            }, { enableHighAccuracy: true });
+        }
+    }
 
     obtenerIngredientes();
     </script>
