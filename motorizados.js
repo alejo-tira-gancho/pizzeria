@@ -25,15 +25,25 @@ async function cargarPedidosMotorizado() {
 
         contenedor.innerHTML = "";
         data.forEach(p => {
-            contenedor.innerHTML += `
-                <div class="card-motorizado" style="border:2px solid #ff914d; padding:15px; margin:10px; border-radius:12px; background:#fff;">
-                    <h3 style="margin-top:0;">📍 ${p.direccion}</h3>
-                    <p><strong>Cliente:</strong> ${p.nombre}</p>
-                    <p><strong>Ref:</strong> ${p.referencia || 'N/A'}</p>
-                    <div style="display:flex; gap:10px;">
-                    <a href="tel:${p.telefono}" style="background:#25d366; color:white; padding:10px; border-radius:8px; text-decoration:none; flex:1; text-align:center;">📞 Llamar</a>
-                   <button class="btn-entregar" onclick="confirmarEntrega(${p.id})">✅ Entregado</button>                
-                </div>`;
+ contenedor.innerHTML += `
+    <div class="card-motorizado" style="border:2px solid #ff914d; padding:15px; margin:10px; border-radius:12px; background:#fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h3 style="margin-top:0; font-size: 1.1em;">
+            <a href="${p.direccion}" target="_blank" style="color: #007bff; text-decoration: none; display: block; padding: 5px 0;">
+                📍 Ver ubicación en Google Maps
+            </a>
+        </h3>
+        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${p.nombre}</p>
+        <p style="margin: 5px 0;"><strong>Ref:</strong> ${p.referencia || 'N/A'}</p>
+        
+        <div style="display:flex; gap:10px; margin-top: 15px;">
+            <a href="tel:${p.telefono}" style="background:#25d366; color:white; padding:12px; border-radius:8px; text-decoration:none; flex:1; text-align:center; font-weight: bold;">
+                📞 Llamar
+            </a>
+            <button class="btn-entregar" onclick="confirmarEntrega(${p.id})" style="flex:1; cursor: pointer;">
+                ✅ Entregado
+            </button>                
+        </div>
+    </div>`;
         });
     } catch (err) {
         console.error("Error al cargar:", err.message);
